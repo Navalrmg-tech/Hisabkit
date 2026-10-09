@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>HisabKit - Personal Ledger & Accounts</title>
+    <title>HisabKit - Ledger, Accounts & Credit Cards</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
@@ -13,18 +13,18 @@
     <div class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-20 flex justify-between items-center">
         <div>
             <h1 class="text-lg font-bold">HisabKit</h1>
-            <p class="text-xs text-indigo-200">Personal Ledger + Bank Accounts</p>
+            <p class="text-xs text-indigo-200">Ledger, Bank Accounts & Credit Cards</p>
         </div>
-        <div class="flex space-x-1.5">
-            <button onclick="exportData()" class="bg-indigo-600 px-2 py-1 rounded text-xs font-semibold">Backup</button>
-            <button onclick="triggerRestore()" class="bg-emerald-600 px-2 py-1 rounded text-xs font-semibold">Restore</button>
-            <button onclick="resetData()" class="bg-red-600 px-2 py-1 rounded text-xs font-semibold">Reset</button>
+        <div class="flex space-x-1">
+            <button onclick="exportData()" class="bg-indigo-600 px-2 py-1 rounded text-[10px] font-semibold">Backup</button>
+            <button onclick="triggerRestore()" class="bg-emerald-600 px-2 py-1 rounded text-[10px] font-semibold">Restore</button>
+            <button onclick="resetData()" class="bg-red-600 px-2 py-1 rounded text-[10px] font-semibold">Reset</button>
             <input type="file" id="restoreFile" accept=".json" onchange="importData(event)" class="hidden">
         </div>
     </div>
 
     <!-- Summary Dashboard -->
-    <div class="p-4 grid grid-cols-3 gap-2">
+    <div class="p-3 grid grid-cols-2 gap-2">
         <div class="bg-white p-2.5 rounded-xl shadow border-l-4 border-green-500">
             <p class="text-[10px] text-gray-500 font-bold">YOU'LL GET</p>
             <p id="totalGet" class="text-sm font-extrabold text-green-600">₹0</p>
@@ -34,15 +34,26 @@
             <p id="totalGive" class="text-sm font-extrabold text-red-600">₹0</p>
         </div>
         <div class="bg-white p-2.5 rounded-xl shadow border-l-4 border-blue-500">
-            <p class="text-[10px] text-gray-500 font-bold">TOTAL BALANCE</p>
+            <p class="text-[10px] text-gray-500 font-bold">BANK BALANCE</p>
             <p id="totalBankBalance" class="text-sm font-extrabold text-blue-600">₹0</p>
+        </div>
+        <div class="bg-white p-2.5 rounded-xl shadow border-l-4 border-purple-500">
+            <p class="text-[10px] text-gray-500 font-bold">CC TOTAL LIMIT</p>
+            <p id="totalCCLimit" class="text-sm font-extrabold text-purple-600">₹0</p>
+        </div>
+        <div class="bg-white p-2.5 rounded-xl shadow border-l-4 border-orange-500 col-span-2">
+            <div class="flex justify-between items-center">
+                <p class="text-[10px] text-gray-500 font-bold">TOTAL CC SPEND (USED)</p>
+                <p id="totalCCUsed" class="text-sm font-extrabold text-orange-600">₹0</p>
+            </div>
         </div>
     </div>
 
     <!-- TABS SWITCHER -->
-    <div class="px-4 mb-3 flex space-x-2">
-        <button onclick="switchTab('parties')" id="partyTabBtn" class="flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-600 text-white shadow">Customers / Parties</button>
-        <button onclick="switchTab('accounts')" id="accountTabBtn" class="flex-1 py-2 rounded-lg font-bold text-xs bg-white text-gray-700 shadow border">Bank & Cash Accounts</button>
+    <div class="px-3 mb-3 flex space-x-1">
+        <button onclick="switchTab('parties')" id="partyTabBtn" class="flex-1 py-2 rounded-lg font-bold text-[11px] bg-indigo-600 text-white shadow">Customers</button>
+        <button onclick="switchTab('accounts')" id="accountTabBtn" class="flex-1 py-2 rounded-lg font-bold text-[11px] bg-white text-gray-700 shadow border">Bank / Cash</button>
+        <button onclick="switchTab('cards')" id="cardTabBtn" class="flex-1 py-2 rounded-lg font-bold text-[11px] bg-white text-gray-700 shadow border">Credit Cards</button>
     </div>
 
     <!-- SECTION 1: PARTIES VIEW -->
@@ -57,30 +68,42 @@
         <div id="partyList" class="space-y-2"></div>
     </div>
 
-    <!-- SECTION 2: ACCOUNTS VIEW (Hidden by default) -->
+    <!-- SECTION 2: ACCOUNTS VIEW -->
     <div id="accountsSection" class="px-4 hidden">
         <div class="flex justify-between items-center mb-2">
-            <h2 class="text-gray-700 font-bold text-xs">MY ACCOUNTS (Bank / Cash)</h2>
+            <h2 class="text-gray-700 font-bold text-xs">MY BANK / CASH ACCOUNTS</h2>
             <button onclick="openAddAccountModal()" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold">+ Add Account</button>
         </div>
         <div id="accountList" class="space-y-2"></div>
     </div>
 
-    <!-- Floating Add Button for Parties -->
+    <!-- SECTION 3: CREDIT CARDS VIEW -->
+    <div id="cardsSection" class="px-4 hidden">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-gray-700 font-bold text-xs">MY CREDIT CARDS</h2>
+            <button onclick="openAddCardModal()" class="bg-purple-600 text-white px-3 py-1 rounded-lg text-xs font-bold">+ Add Card</button>
+        </div>
+        <div id="cardList" class="space-y-2"></div>
+    </div>
+
+    <!-- FLOATING ACTION BUTTONS -->
     <div id="partyFab" class="fixed bottom-6 right-6 z-10">
         <button onclick="openAddPartyModal()" class="bg-indigo-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-sm flex items-center space-x-2">
             <span>➕</span> <span>Add Customer</span>
         </button>
     </div>
-
-    <!-- Floating Add Button for Accounts -->
     <div id="accountFab" class="fixed bottom-6 right-6 z-10 hidden">
         <button onclick="openAddAccountModal()" class="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-sm flex items-center space-x-2">
             <span>➕</span> <span>Add Account</span>
         </button>
     </div>
+    <div id="cardFab" class="fixed bottom-6 right-6 z-10 hidden">
+        <button onclick="openAddCardModal()" class="bg-purple-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-sm flex items-center space-x-2">
+            <span>➕</span> <span>Add Card</span>
+        </button>
+    </div>
 
-    <!-- Add Party Modal -->
+    <!-- MODALS -->
     <div id="partyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
         <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
             <h3 class="text-md font-bold mb-3 text-gray-800">Add New Customer</h3>
@@ -93,15 +116,26 @@
         </div>
     </div>
 
-    <!-- Add Account Modal -->
     <div id="accountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
         <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
             <h3 class="text-md font-bold mb-3 text-gray-800">Add Bank/Cash Account</h3>
-            <input type="text" id="accNameInput" placeholder="Account Name (e.g. SBI, Paytm, Cash)" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
+            <input type="text" id="accNameInput" placeholder="Account Name (e.g. SBI, Paytm)" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
             <input type="number" id="accOpeningBalance" placeholder="Initial Balance (₹)" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
             <div class="flex justify-end space-x-2">
                 <button onclick="closeAddAccountModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
                 <button onclick="saveAccount()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="cardModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
+        <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
+            <h3 class="text-md font-bold mb-3 text-gray-800">Add Credit Card</h3>
+            <input type="text" id="cardNameInput" placeholder="Card Name (e.g. HDFC Regalia)" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
+            <input type="number" id="cardLimitInput" placeholder="Total Credit Limit (₹) *" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeAddCardModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
+                <button onclick="saveCard()" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold">Save</button>
             </div>
         </div>
     </div>
@@ -143,23 +177,51 @@
                 </div>
             </div>
         </div>
-        <div id="accBalanceBanner" class="p-3 bg-blue-50 text-blue-800 font-bold text-center text-sm flex justify-between px-6 border-b">
+        <div class="p-3 bg-blue-50 text-blue-800 font-bold text-center text-sm flex justify-between px-6 border-b">
             <span>Available Balance:</span>
             <span id="detailAccBalanceAmount">₹0</span>
         </div>
         <div id="accTxContent" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50"></div>
         <div class="p-3 grid grid-cols-2 gap-3 bg-white border-t">
-            <button onclick="openAddAccTxModal(false)" class="bg-red-600 text-white py-3 rounded-xl font-bold text-sm shadow">Expense (- Kharch)</button>
-            <button onclick="openAddAccTxModal(true)" class="bg-green-600 text-white py-3 rounded-xl font-bold text-sm shadow">Income (+ Aaye)</button>
+            <button onclick="openAddAccTxModal(false)" class="bg-red-600 text-white py-3 rounded-xl font-bold text-sm shadow">Expense (-)</button>
+            <button onclick="openAddAccTxModal(true)" class="bg-green-600 text-white py-3 rounded-xl font-bold text-sm shadow">Income (+)</button>
         </div>
     </div>
 
-    <!-- Add Transaction Modal (Party) -->
+    <!-- Credit Card Detail Screen -->
+    <div id="cardDetailScreen" class="fixed inset-0 bg-gray-100 hidden flex flex-col z-30">
+        <div class="bg-purple-700 text-white p-4 flex items-center justify-between shadow">
+            <div class="flex items-center space-x-3">
+                <button onclick="closeCardDetail()" class="text-lg font-bold">⬅</button>
+                <div>
+                    <h2 id="detailCardName" class="font-bold text-base">Card Name</h2>
+                    <p class="text-xs text-purple-200">Credit Card Manager</p>
+                </div>
+            </div>
+        </div>
+        <div class="p-3 bg-purple-50 text-purple-900 font-bold text-center text-sm flex justify-between px-6 border-b">
+            <div>
+                <span class="text-xs text-gray-500 block">Total Limit</span>
+                <span id="detailCardTotalLimit" class="text-purple-700">₹0</span>
+            </div>
+            <div class="text-right">
+                <span class="text-xs text-gray-500 block">Available Limit</span>
+                <span id="detailCardAvailLimit" class="text-green-700">₹0</span>
+            </div>
+        </div>
+        <div id="cardTxContent" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50"></div>
+        <div class="p-3 grid grid-cols-2 gap-3 bg-white border-t">
+            <button onclick="openAddCardTxModal(false)" class="bg-red-600 text-white py-3 rounded-xl font-bold text-sm shadow">Card Spend (- Limit)</button>
+            <button onclick="openAddCardTxModal(true)" class="bg-green-600 text-white py-3 rounded-xl font-bold text-sm shadow">Bill Paid / Add (+ Limit)</button>
+        </div>
+    </div>
+
+    <!-- MODALS FOR TRANSACTIONS -->
     <div id="addTxModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
         <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
             <h3 id="txModalTitle" class="text-md font-bold mb-3">Add Entry</h3>
             <input type="number" id="txAmountInput" placeholder="Amount (₹) *" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
-            <input type="text" id="txDescInput" placeholder="Enter details (Bill no, Item, etc.)" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <input type="text" id="txDescInput" placeholder="Enter details..." class="w-full border p-2.5 rounded-lg mb-4 text-sm">
             <div class="flex justify-end space-x-2">
                 <button onclick="closeAddTxModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
                 <button onclick="saveTransaction()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold">Save</button>
@@ -167,12 +229,11 @@
         </div>
     </div>
 
-    <!-- Add Account Transaction Modal -->
     <div id="addAccTxModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
         <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
             <h3 id="accTxModalTitle" class="text-md font-bold mb-3">Add Entry</h3>
             <input type="number" id="accTxAmountInput" placeholder="Amount (₹) *" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
-            <input type="text" id="accTxDescInput" placeholder="Reason (e.g. Petrol, Salary, Grocery)" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <input type="text" id="accTxDescInput" placeholder="Reason..." class="w-full border p-2.5 rounded-lg mb-4 text-sm">
             <div class="flex justify-end space-x-2">
                 <button onclick="closeAddAccTxModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
                 <button onclick="saveAccTransaction()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Save</button>
@@ -180,48 +241,71 @@
         </div>
     </div>
 
+    <div id="addCardTxModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+        <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
+            <h3 id="cardTxModalTitle" class="text-md font-bold mb-3">Card Transaction</h3>
+            <input type="number" id="cardTxAmountInput" placeholder="Amount (₹) *" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
+            <input type="text" id="cardTxDescInput" placeholder="Where did you spend..." class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeAddCardTxModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
+                <button onclick="saveCardTransaction()" class="px-4 py-2 bg-purple-600 text-white rounded-lg text-sm font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let parties = JSON.parse(localStorage.getItem('hisabkit_data')) || [];
         let accounts = JSON.parse(localStorage.getItem('hisabkit_accounts')) || [];
+        let cards = JSON.parse(localStorage.getItem('hisabkit_cards')) || [];
         
         let activePartyIndex = null;
         let activeAccountIndex = null;
+        let activeCardIndex = null;
         let isCreditMode = true;
         let isAccIncomeMode = true;
+        let isCardAddMode = true;
         let currentTab = 'parties';
 
         function saveData() {
             localStorage.setItem('hisabkit_data', JSON.stringify(parties));
             localStorage.setItem('hisabkit_accounts', JSON.stringify(accounts));
+            localStorage.setItem('hisabkit_cards', JSON.stringify(cards));
             render();
         }
 
         function switchTab(tab) {
             currentTab = tab;
+            document.getElementById('partiesSection').classList.add('hidden');
+            document.getElementById('accountsSection').classList.add('hidden');
+            document.getElementById('cardsSection').classList.add('hidden');
+            document.getElementById('partyFab').classList.add('hidden');
+            document.getElementById('accountFab').classList.add('hidden');
+            document.getElementById('cardFab').classList.add('hidden');
+            
+            document.getElementById('partyTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-[11px] bg-white text-gray-700 shadow border";
+            document.getElementById('accountTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-[11px] bg-white text-gray-700 shadow border";
+            document.getElementById('cardTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-[11px] bg-white text-gray-700 shadow border";
+
             if (tab === 'parties') {
                 document.getElementById('partiesSection').classList.remove('hidden');
-                document.getElementById('accountsSection').classList.add('hidden');
                 document.getElementById('partyFab').classList.remove('hidden');
-                document.getElementById('accountFab').classList.add('hidden');
-                document.getElementById('partyTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-600 text-white shadow";
-                document.getElementById('accountTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-white text-gray-700 shadow border";
-            } else {
-                document.getElementById('partiesSection').classList.add('hidden');
+                document.getElementById('partyTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-[11px] bg-indigo-600 text-white shadow";
+            } else if (tab === 'accounts') {
                 document.getElementById('accountsSection').classList.remove('hidden');
-                document.getElementById('partyFab').classList.add('hidden');
                 document.getElementById('accountFab').classList.remove('hidden');
-                document.getElementById('accountTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-blue-600 text-white shadow";
-                document.getElementById('partyTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-white text-gray-700 shadow border";
+                document.getElementById('accountTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-[11px] bg-blue-600 text-white shadow";
+            } else {
+                document.getElementById('cardsSection').classList.remove('hidden');
+                document.getElementById('cardFab').classList.remove('hidden');
+                document.getElementById('cardTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-[11px] bg-purple-600 text-white shadow";
             }
             render();
         }
 
         function render() {
-            let totalGet = 0;
-            let totalGive = 0;
+            let totalGet = 0, totalGive = 0;
             let searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            let partyHTML = '';
-            let pCount = 0;
+            let partyHTML = '', pCount = 0;
 
             parties.forEach((party, index) => {
                 if (!party.name.toLowerCase().includes(searchQuery)) return;
@@ -239,7 +323,7 @@
                             </div>
                             <div>
                                 <h3 class="font-bold text-gray-800 text-sm">${party.name}</h3>
-                                <p class="text-xs text-gray-400">${party.phone || 'No phone number'}</p>
+                                <p class="text-xs text-gray-400">${party.phone || 'No phone'}</p>
                             </div>
                         </div>
                         <div class="flex items-center space-x-3">
@@ -247,7 +331,7 @@
                                 <p class="font-extrabold text-sm ${balance >= 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(balance)}</p>
                                 <p class="text-[10px] text-gray-500 font-medium">${balance >= 0 ? "You'll Get" : "You'll Give"}</p>
                             </div>
-                            <button onclick="deleteParty(${index})" class="text-gray-300 hover:text-red-500 p-2 text-sm" title="Delete Customer">🗑️</button>
+                            <button onclick="deleteParty(${index})" class="text-gray-300 hover:text-red-500 p-2 text-sm">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -255,7 +339,6 @@
 
             let totalBankBalance = 0;
             let accountHTML = '';
-
             accounts.forEach((acc, index) => {
                 let bal = acc.openingBalance;
                 acc.txs.forEach(t => bal += t.isIncome ? t.amount : -t.amount);
@@ -264,9 +347,7 @@
                 accountHTML += `
                     <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center hover:bg-gray-50">
                         <div onclick="openAccount(${index})" class="flex items-center space-x-3 flex-1 cursor-pointer">
-                            <div class="w-10 h-10 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center text-sm">
-                                🏦
-                            </div>
+                            <div class="w-10 h-10 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center text-sm">🏦</div>
                             <div>
                                 <h3 class="font-bold text-gray-800 text-sm">${acc.name}</h3>
                                 <p class="text-xs text-gray-400">${acc.txs.length} Transactions</p>
@@ -277,7 +358,42 @@
                                 <p class="font-extrabold text-sm ${bal >= 0 ? 'text-blue-600' : 'text-red-600'}">₹${bal}</p>
                                 <p class="text-[10px] text-gray-500 font-medium">Available</p>
                             </div>
-                            <button onclick="deleteAccount(${index})" class="text-gray-300 hover:text-red-500 p-2 text-sm" title="Delete Account">🗑️</button>
+                            <button onclick="deleteAccount(${index})" class="text-gray-300 hover:text-red-500 p-2 text-sm">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            let totalCCLimit = 0;
+            let totalCCUsed = 0;
+            let cardHTML = '';
+            cards.forEach((card, index) => {
+                totalCCLimit += card.totalLimit;
+                let cardUsed = 0;
+                card.txs.forEach(t => {
+                    if (!t.isAdd) cardUsed += t.amount;
+                    else cardUsed -= t.amount;
+                });
+                if (cardUsed < 0) cardUsed = 0;
+                totalCCUsed += cardUsed;
+
+                let avail = card.totalLimit - cardUsed;
+
+                cardHTML += `
+                    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center hover:bg-gray-50">
+                        <div onclick="openCard(${index})" class="flex items-center space-x-3 flex-1 cursor-pointer">
+                            <div class="w-10 h-10 bg-purple-100 text-purple-700 font-bold rounded-full flex items-center justify-center text-sm">💳</div>
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-sm">${card.name}</h3>
+                                <p class="text-xs text-gray-400">Used: ₹${cardUsed} / Limit: ₹${card.totalLimit}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <div onclick="openCard(${index})" class="text-right cursor-pointer">
+                                <p class="font-extrabold text-sm text-purple-600">₹${avail}</p>
+                                <p class="text-[10px] text-gray-500 font-medium">Avail. Limit</p>
+                            </div>
+                            <button onclick="deleteCard(${index})" class="text-gray-300 hover:text-red-500 p-2 text-sm">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -286,32 +402,30 @@
             document.getElementById('totalGet').innerText = `₹${totalGet}`;
             document.getElementById('totalGive').innerText = `₹${totalGive}`;
             document.getElementById('totalBankBalance').innerText = `₹${totalBankBalance}`;
+            document.getElementById('totalCCLimit').innerText = `₹${totalCCLimit}`;
+            document.getElementById('totalCCUsed').innerText = `₹${totalCCUsed}`;
             document.getElementById('partyCount').innerText = `${pCount} Parties`;
             document.getElementById('partyList').innerHTML = partyHTML || '<p class="text-center text-gray-400 py-6 text-sm">No customers found.</p>';
-            document.getElementById('accountList').innerHTML = accountHTML || '<p class="text-center text-gray-400 py-6 text-sm">No accounts added yet. Click "+ Add Account".</p>';
+            document.getElementById('accountList').innerHTML = accountHTML || '<p class="text-center text-gray-400 py-6 text-sm">No bank accounts added.</p>';
+            document.getElementById('cardList').innerHTML = cardHTML || '<p class="text-center text-gray-400 py-6 text-sm">No credit cards added.</p>';
         }
 
-        // Party Modals & Actions
+        // Parties Actions
         function openAddPartyModal() { document.getElementById('partyModal').classList.remove('hidden'); }
         function closeAddPartyModal() { document.getElementById('partyModal').classList.add('hidden'); }
         function saveParty() {
             let name = document.getElementById('partyNameInput').value.trim();
             let phone = document.getElementById('partyPhoneInput').value.trim();
-            if (!name) return alert('Please enter customer name');
+            if (!name) return alert('Enter name');
             parties.push({ name, phone, txs: [] });
             document.getElementById('partyNameInput').value = '';
             document.getElementById('partyPhoneInput').value = '';
             closeAddPartyModal();
             saveData();
         }
-
         function deleteParty(index) {
-            if (confirm(`Are you sure you want to delete customer "${parties[index].name}"?`)) {
-                parties.splice(index, 1);
-                saveData();
-            }
+            if (confirm('Delete this customer?')) { parties.splice(index, 1); saveData(); }
         }
-
         function openParty(index) {
             activePartyIndex = index;
             let party = parties[index];
@@ -320,32 +434,20 @@
             updatePartyScreen();
             document.getElementById('partyDetailScreen').classList.remove('hidden');
         }
-
-        function closePartyDetail() {
-            document.getElementById('partyDetailScreen').classList.add('hidden');
-            render();
-        }
-
+        function closePartyDetail() { document.getElementById('partyDetailScreen').classList.add('hidden'); render(); }
         function updatePartyScreen() {
             let party = parties[activePartyIndex];
-            let txHTML = '';
-            let balance = 0;
+            let txHTML = '', balance = 0;
             party.txs.forEach((t, tIndex) => {
                 balance += t.isCredit ? t.amount : -t.amount;
                 txHTML += `
                     <div class="bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center text-sm">
-                        <div>
-                            <p class="font-semibold text-gray-800">${t.desc}</p>
-                            <p class="text-[10px] text-gray-400">${t.date}</p>
-                        </div>
+                        <div><p class="font-semibold text-gray-800">${t.desc}</p><p class="text-[10px] text-gray-400">${t.date}</p></div>
                         <div class="flex items-center space-x-3">
-                            <span class="font-bold ${t.isCredit ? 'text-green-600' : 'text-red-600'}">
-                                ${t.isCredit ? '+' : '-'} ₹${t.amount}
-                            </span>
+                            <span class="font-bold ${t.isCredit ? 'text-green-600' : 'text-red-600'}">${t.isCredit ? '+' : '-'} ₹${t.amount}</span>
                             <button onclick="deleteTx(${tIndex})" class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
             let banner = document.getElementById('detailBalanceBanner');
             let amtSpan = document.getElementById('detailBalanceAmount');
@@ -356,18 +458,17 @@
                 banner.className = "p-3 bg-red-50 text-red-800 font-bold text-center text-sm flex justify-between px-6 border-b border-red-200";
                 amtSpan.innerText = `₹${Math.abs(balance)} (You'll Give)`;
             }
-            document.getElementById('pdfContent').innerHTML = txHTML || '<p class="text-center text-gray-400 py-6 text-sm">No entries made yet.</p>';
+            document.getElementById('pdfContent').innerHTML = txHTML || '<p class="text-center text-gray-400 py-6 text-sm">No entries yet.</p>';
         }
-
         function openAddTxModal(isCredit) {
             isCreditMode = isCredit;
-            document.getElementById('txModalTitle').innerText = isCredit ? "You Got (+) - Jama" : "You Gave (-) - Udhar";
+            document.getElementById('txModalTitle').innerText = isCredit ? "You Got (+)" : "You Gave (-)";
             document.getElementById('addTxModal').classList.remove('hidden');
         }
         function closeAddTxModal() { document.getElementById('addTxModal').classList.add('hidden'); }
         function saveTransaction() {
             let amount = parseFloat(document.getElementById('txAmountInput').value);
-            let desc = document.getElementById('txDescInput').value.trim() || (isCreditMode ? 'Payment Received' : 'Given Item/Cash');
+            let desc = document.getElementById('txDescInput').value.trim() || (isCreditMode ? 'Received' : 'Given');
             if (!amount || amount <= 0) return alert('Enter valid amount');
             let date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
             parties[activePartyIndex].txs.unshift({ amount, desc, isCredit: isCreditMode, date });
@@ -378,83 +479,58 @@
             updatePartyScreen();
         }
         function deleteTx(tIndex) {
-            if (confirm('Delete this transaction?')) {
-                parties[activePartyIndex].txs.splice(tIndex, 1);
-                saveData();
-                updatePartyScreen();
-            }
+            if (confirm('Delete transaction?')) { parties[activePartyIndex].txs.splice(tIndex, 1); saveData(); updatePartyScreen(); }
         }
 
-        // Account Modals & Actions
+        // Accounts Actions
         function openAddAccountModal() { document.getElementById('accountModal').classList.remove('hidden'); }
         function closeAddAccountModal() { document.getElementById('accountModal').classList.add('hidden'); }
         function saveAccount() {
             let name = document.getElementById('accNameInput').value.trim();
             let openingBalance = parseFloat(document.getElementById('accOpeningBalance').value) || 0;
-            if (!name) return alert('Please enter account name');
+            if (!name) return alert('Enter account name');
             accounts.push({ name, openingBalance, txs: [] });
             document.getElementById('accNameInput').value = '';
             document.getElementById('accOpeningBalance').value = '';
             closeAddAccountModal();
             saveData();
         }
-
         function deleteAccount(index) {
-            if (confirm(`Are you sure you want to delete account "${accounts[index].name}"?`)) {
-                accounts.splice(index, 1);
-                saveData();
-            }
+            if (confirm('Delete account?')) { accounts.splice(index, 1); saveData(); }
         }
-
         function openAccount(index) {
             activeAccountIndex = index;
-            let acc = accounts[index];
-            document.getElementById('detailAccName').innerText = acc.name;
+            document.getElementById('detailAccName').innerText = accounts[index].name;
             updateAccountScreen();
             document.getElementById('accountDetailScreen').classList.remove('hidden');
         }
-
-        function closeAccountDetail() {
-            document.getElementById('accountDetailScreen').classList.add('hidden');
-            render();
-        }
-
+        function closeAccountDetail() { document.getElementById('accountDetailScreen').classList.add('hidden'); render(); }
         function updateAccountScreen() {
             let acc = accounts[activeAccountIndex];
-            let txHTML = '';
-            let bal = acc.openingBalance;
-
+            let txHTML = '', bal = acc.openingBalance;
             acc.txs.forEach((t, tIndex) => {
                 bal += t.isIncome ? t.amount : -t.amount;
                 txHTML += `
                     <div class="bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center text-sm">
-                        <div>
-                            <p class="font-semibold text-gray-800">${t.desc}</p>
-                            <p class="text-[10px] text-gray-400">${t.date}</p>
-                        </div>
+                        <div><p class="font-semibold text-gray-800">${t.desc}</p><p class="text-[10px] text-gray-400">${t.date}</p></div>
                         <div class="flex items-center space-x-3">
-                            <span class="font-bold ${t.isIncome ? 'text-green-600' : 'text-red-600'}">
-                                ${t.isIncome ? '+' : '-'} ₹${t.amount}
-                            </span>
+                            <span class="font-bold ${t.isIncome ? 'text-green-600' : 'text-red-600'}">${t.isIncome ? '+' : '-'} ₹${t.amount}</span>
                             <button onclick="deleteAccTx(${tIndex})" class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-
             document.getElementById('detailAccBalanceAmount').innerText = `₹${bal}`;
-            document.getElementById('accTxContent').innerHTML = txHTML || '<p class="text-center text-gray-400 py-6 text-sm">No transactions in this account yet.</p>';
+            document.getElementById('accTxContent').innerHTML = txHTML || '<p class="text-center text-gray-400 py-6 text-sm">No transactions yet.</p>';
         }
-
         function openAddAccTxModal(isIncome) {
             isAccIncomeMode = isIncome;
-            document.getElementById('accTxModalTitle').innerText = isIncome ? "Add Income (+ Aaye)" : "Add Expense (- Kharch)";
+            document.getElementById('accTxModalTitle').innerText = isIncome ? "Income (+)" : "Expense (-)";
             document.getElementById('addAccTxModal').classList.remove('hidden');
         }
         function closeAddAccTxModal() { document.getElementById('addAccTxModal').classList.add('hidden'); }
         function saveAccTransaction() {
             let amount = parseFloat(document.getElementById('accTxAmountInput').value);
-            let desc = document.getElementById('accTxDescInput').value.trim() || (isAccIncomeMode ? 'Money Added' : 'Expense');
+            let desc = document.getElementById('accTxDescInput').value.trim() || (isAccIncomeMode ? 'Income' : 'Expense');
             if (!amount || amount <= 0) return alert('Enter valid amount');
             let date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
             accounts[activeAccountIndex].txs.unshift({ amount, desc, isIncome: isAccIncomeMode, date });
@@ -465,74 +541,111 @@
             updateAccountScreen();
         }
         function deleteAccTx(tIndex) {
-            if (confirm('Delete this entry?')) {
-                accounts[activeAccountIndex].txs.splice(tIndex, 1);
-                saveData();
-                updateAccountScreen();
-            }
+            if (confirm('Delete entry?')) { accounts[activeAccountIndex].txs.splice(tIndex, 1); saveData(); updateAccountScreen(); }
         }
 
-        // WhatsApp, PDF, Backup & Restore
+        // Credit Cards Actions
+        function openAddCardModal() { document.getElementById('cardModal').classList.remove('hidden'); }
+        function closeAddCardModal() { document.getElementById('cardModal').classList.add('hidden'); }
+        function saveCard() {
+            let name = document.getElementById('cardNameInput').value.trim();
+            let totalLimit = parseFloat(document.getElementById('cardLimitInput').value) || 0;
+            if (!name || totalLimit <= 0) return alert('Enter valid card name and limit');
+            cards.push({ name, totalLimit, txs: [] });
+            document.getElementById('cardNameInput').value = '';
+            document.getElementById('cardLimitInput').value = '';
+            closeAddCardModal();
+            saveData();
+        }
+        function deleteCard(index) {
+            if (confirm('Delete credit card?')) { cards.splice(index, 1); saveData(); }
+        }
+        function openCard(index) {
+            activeCardIndex = index;
+            document.getElementById('detailCardName').innerText = cards[index].name;
+            updateCardScreen();
+            document.getElementById('cardDetailScreen').classList.remove('hidden');
+        }
+        function closeCardDetail() { document.getElementById('cardDetailScreen').classList.add('hidden'); render(); }
+        function updateCardScreen() {
+            let card = cards[activeCardIndex];
+            let txHTML = '', used = 0;
+            card.txs.forEach((t, tIndex) => {
+                if (!t.isAdd) used += t.amount;
+                else used -= t.amount;
+                
+                txHTML += `
+                    <div class="bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center text-sm">
+                        <div><p class="font-semibold text-gray-800">${t.desc}</p><p class="text-[10px] text-gray-400">${t.date}</p></div>
+                        <div class="flex items-center space-x-3">
+                            <span class="font-bold ${t.isAdd ? 'text-green-600' : 'text-red-600'}">${t.isAdd ? '+' : '-'} ₹${t.amount}</span>
+                            <button onclick="deleteCardTx(${tIndex})" class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
+                        </div>
+                    </div>`;
+            });
+            if (used < 0) used = 0;
+            let avail = card.totalLimit - used;
+            document.getElementById('detailCardTotalLimit').innerText = `₹${card.totalLimit}`;
+            document.getElementById('detailCardAvailLimit').innerText = `₹${avail}`;
+            document.getElementById('cardTxContent').innerHTML = txHTML || '<p class="text-center text-gray-400 py-6 text-sm">No card transactions yet.</p>';
+        }
+        function openAddCardTxModal(isAdd) {
+            isCardAddMode = isAdd;
+            document.getElementById('cardTxModalTitle').innerText = isAdd ? "Bill Paid / Limit Added (+)" : "Card Spend (- Limit)";
+            document.getElementById('addCardTxModal').classList.remove('hidden');
+        }
+        function closeAddCardTxModal() { document.getElementById('addCardTxModal').classList.add('hidden'); }
+        function saveCardTransaction() {
+            let amount = parseFloat(document.getElementById('cardTxAmountInput').value);
+            let desc = document.getElementById('cardTxDescInput').value.trim() || (isCardAddMode ? 'Bill Payment' : 'Card Spend');
+            if (!amount || amount <= 0) return alert('Enter valid amount');
+            let date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            cards[activeCardIndex].txs.unshift({ amount, desc, isAdd: isCardAddMode, date });
+            document.getElementById('cardTxAmountInput').value = '';
+            document.getElementById('cardTxDescInput').value = '';
+            closeAddCardTxModal();
+            saveData();
+            updateCardScreen();
+        }
+        function deleteCardTx(tIndex) {
+            if (confirm('Delete card entry?')) { cards[activeCardIndex].txs.splice(tIndex, 1); saveData(); updateCardScreen(); }
+        }
+
+        // WhatsApp, PDF, Backup, Restore, Reset
         function sendWhatsAppReminder() {
             let party = parties[activePartyIndex];
             if (!party.phone) return alert('No phone number saved!');
-            let balance = 0;
-            party.txs.forEach(t => balance += t.isCredit ? t.amount : -t.amount);
+            let balance = 0; party.txs.forEach(t => balance += t.isCredit ? t.amount : -t.amount);
             if (balance <= 0) return alert('No due amount.');
-            let msg = `Hello ${party.name}, your account balance is ₹${balance}. Please clear your dues. Thank you!`;
-            window.open(`https://wa.me/91${party.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            window.open(`https://wa.me/91${party.phone}?text=${encodeURIComponent(`Hello ${party.name}, your account balance is ₹${balance}. Please clear dues.`)}`, '_blank');
         }
-
         function downloadPDF() {
-            let party = parties[activePartyIndex];
-            html2pdf().from(document.getElementById('pdfContent')).save(`${party.name}_statement.pdf`);
+            html2pdf().from(document.getElementById('pdfContent')).save(`${parties[activePartyIndex].name}_statement.pdf`);
         }
-
         function exportData() {
-            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ parties, accounts }));
-            let dlAnchor = document.createElement('a');
-            dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", "hisabkit_backup.json");
-            document.body.appendChild(dlAnchor);
-            dlAnchor.click();
-            dlAnchor.remove();
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ parties, accounts, cards }));
+            let dl = document.createElement('a'); dl.setAttribute("href", dataStr); dl.setAttribute("download", "hisabkit_backup.json");
+            document.body.appendChild(dl); dl.click(); dl.remove();
         }
-
-        function triggerRestore() {
-            document.getElementById('restoreFile').click();
-        }
-
+        function triggerRestore() { document.getElementById('restoreFile').click(); }
         function importData(event) {
-            let file = event.target.files[0];
-            if (!file) return;
-
+            let file = event.target.files[0]; if (!file) return;
             let reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    let parsedData = JSON.parse(e.target.result);
-                    if (parsedData.parties && parsedData.accounts) {
-                        if (confirm('Aapka purana data replace ho jayega. Kya aap backup file import karna chahte hain?')) {
-                            parties = parsedData.parties;
-                            accounts = parsedData.accounts;
-                            saveData();
-                            alert('Data successfully restore ho gaya hai!');
+                    let d = JSON.parse(e.target.result);
+                    if (d.parties && d.accounts) {
+                        if (confirm('Replace current data with backup?')) {
+                            parties = d.parties; accounts = d.accounts; cards = d.cards || [];
+                            saveData(); alert('Restored successfully!');
                         }
-                    } else {
-                        alert('Invalid backup file format!');
-                    }
-                } catch (error) {
-                    alert('File read karne mein error aayi. Sahi JSON file select karein.');
-                }
+                    } else { alert('Invalid file format!'); }
+                } catch (err) { alert('Error reading file.'); }
             };
             reader.readAsText(file);
         }
-
         function resetData() {
-            if (confirm('Are you sure you want to delete all data?')) {
-                parties = [];
-                accounts = [];
-                saveData();
-            }
+            if (confirm('Delete all data?')) { parties = []; accounts = []; cards = []; saveData(); }
         }
 
         render();
