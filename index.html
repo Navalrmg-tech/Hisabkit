@@ -232,8 +232,8 @@
                 else if (balance < 0) totalGive += Math.abs(balance);
 
                 partyHTML += `
-                    <div onclick="openParty(${index})" class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-50">
-                        <div class="flex items-center space-x-3">
+                    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center hover:bg-gray-50">
+                        <div onclick="openParty(${index})" class="flex items-center space-x-3 flex-1 cursor-pointer">
                             <div class="w-10 h-10 bg-indigo-100 text-indigo-700 font-bold rounded-full flex items-center justify-center text-sm">
                                 ${party.name.charAt(0).toUpperCase()}
                             </div>
@@ -242,9 +242,12 @@
                                 <p class="text-xs text-gray-400">${party.phone || 'No phone number'}</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-extrabold text-sm ${balance >= 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(balance)}</p>
-                            <p class="text-[10px] text-gray-500 font-medium">${balance >= 0 ? "You'll Get" : "You'll Give"}</p>
+                        <div class="flex items-center space-x-3">
+                            <div onclick="openParty(${index})" class="text-right cursor-pointer">
+                                <p class="font-extrabold text-sm ${balance >= 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(balance)}</p>
+                                <p class="text-[10px] text-gray-500 font-medium">${balance >= 0 ? "You'll Get" : "You'll Give"}</p>
+                            </div>
+                            <button onclick="deleteParty(${index})" class="text-gray-300 hover:text-red-500 p-2 text-sm" title="Delete Customer">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -259,8 +262,8 @@
                 totalBankBalance += bal;
 
                 accountHTML += `
-                    <div onclick="openAccount(${index})" class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-50">
-                        <div class="flex items-center space-x-3">
+                    <div class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center hover:bg-gray-50">
+                        <div onclick="openAccount(${index})" class="flex items-center space-x-3 flex-1 cursor-pointer">
                             <div class="w-10 h-10 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center text-sm">
                                 🏦
                             </div>
@@ -269,9 +272,12 @@
                                 <p class="text-xs text-gray-400">${acc.txs.length} Transactions</p>
                             </div>
                         </div>
-                        <div class="text-right">
-                            <p class="font-extrabold text-sm ${bal >= 0 ? 'text-blue-600' : 'text-red-600'}">₹${bal}</p>
-                            <p class="text-[10px] text-gray-500 font-medium">Available</p>
+                        <div class="flex items-center space-x-3">
+                            <div onclick="openAccount(${index})" class="text-right cursor-pointer">
+                                <p class="font-extrabold text-sm ${bal >= 0 ? 'text-blue-600' : 'text-red-600'}">₹${bal}</p>
+                                <p class="text-[10px] text-gray-500 font-medium">Available</p>
+                            </div>
+                            <button onclick="deleteAccount(${index})" class="text-gray-300 hover:text-red-500 p-2 text-sm" title="Delete Account">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -297,6 +303,13 @@
             document.getElementById('partyPhoneInput').value = '';
             closeAddPartyModal();
             saveData();
+        }
+
+        function deleteParty(index) {
+            if (confirm(`Are you sure you want to delete customer "${parties[index].name}"?`)) {
+                parties.splice(index, 1);
+                saveData();
+            }
         }
 
         function openParty(index) {
@@ -384,6 +397,13 @@
             document.getElementById('accOpeningBalance').value = '';
             closeAddAccountModal();
             saveData();
+        }
+
+        function deleteAccount(index) {
+            if (confirm(`Are you sure you want to delete account "${accounts[index].name}"?`)) {
+                accounts.splice(index, 1);
+                saveData();
+            }
         }
 
         function openAccount(index) {
