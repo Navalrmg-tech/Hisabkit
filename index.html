@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HisabKit - Personal Ledger & Accounts</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans pb-24">
+
+    <!-- Top Header -->
+    <div class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-20 flex justify-between items-center">
+        <div>
+            <h1 class="text-lg font-bold">HisabKit</h1>
+            <p class="text-xs text-indigo-200">Personal Ledger + Bank Accounts</p>
+        </div>
+        <div class="flex space-x-1.5">
+            <button onclick="exportData()" class="bg-indigo-600 px-2 py-1 rounded text-xs font-semibold">Backup</button>
+            <button onclick="triggerRestore()" class="bg-emerald-600 px-2 py-1 rounded text-xs font-semibold">Restore</button>
+            <button onclick="resetData()" class="bg-red-600 px-2 py-1 rounded text-xs font-semibold">Reset</button>
+            <input type="file" id="restoreFile" accept=".json" onchange="importData(event)" class="hidden">
+        </div>
+    </div>
+
+    <!-- Summary Dashboard -->
+    <div class="p-4 grid grid-cols-3 gap-2">
+        <div class="bg-white p-2.5 rounded-xl shadow border-l-4 border-green-500">
+            <p class="text-[10px] text-gray-500 font-bold">YOU'LL GET</p>
+            <p id="totalGet" class="text-sm font-extrabold text-green-600">₹0</p>
+        </div>
+        <div class="bg-white p-2.5 rounded-xl shadow border-l-4 border-red-500">
+            <p class="text-[10px] text-gray-500 font-bold">YOU'LL GIVE</p>
+            <p id="totalGive" class="text-sm font-extrabold text-red-600">₹0</p>
+        </div>
+        <div class="bg-white p-2.5 rounded-xl shadow border-l-4 border-blue-500">
+            <p class="text-[10px] text-gray-500 font-bold">TOTAL BALANCE</p>
+            <p id="totalBankBalance" class="text-sm font-extrabold text-blue-600">₹0</p>
+        </div>
+    </div>
+
+    <!-- TABS SWITCHER -->
+    <div class="px-4 mb-3 flex space-x-2">
+        <button onclick="switchTab('parties')" id="partyTabBtn" class="flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-600 text-white shadow">Customers / Parties</button>
+        <button onclick="switchTab('accounts')" id="accountTabBtn" class="flex-1 py-2 rounded-lg font-bold text-xs bg-white text-gray-700 shadow border">Bank & Cash Accounts</button>
+    </div>
+
+    <!-- SECTION 1: PARTIES VIEW -->
+    <div id="partiesSection" class="px-4">
+        <div class="mb-2">
+            <input type="text" id="searchInput" oninput="render()" placeholder="🔍 Search customer name..." class="w-full p-2 bg-white border rounded-lg shadow-sm text-sm">
+        </div>
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-gray-700 font-bold text-xs">CUSTOMERS LIST</h2>
+            <span id="partyCount" class="text-xs text-gray-500">0 Parties</span>
+        </div>
+        <div id="partyList" class="space-y-2"></div>
+    </div>
+
+    <!-- SECTION 2: ACCOUNTS VIEW (Hidden by default) -->
+    <div id="accountsSection" class="px-4 hidden">
+        <div class="flex justify-between items-center mb-2">
+            <h2 class="text-gray-700 font-bold text-xs">MY ACCOUNTS (Bank / Cash)</h2>
+            <button onclick="openAddAccountModal()" class="bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-bold">+ Add Account</button>
+        </div>
+        <div id="accountList" class="space-y-2"></div>
+    </div>
+
+    <!-- Floating Add Button for Parties -->
+    <div id="partyFab" class="fixed bottom-6 right-6 z-10">
+        <button onclick="openAddPartyModal()" class="bg-indigo-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-sm flex items-center space-x-2">
+            <span>➕</span> <span>Add Customer</span>
+        </button>
+    </div>
+
+    <!-- Floating Add Button for Accounts -->
+    <div id="accountFab" class="fixed bottom-6 right-6 z-10 hidden">
+        <button onclick="openAddAccountModal()" class="bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg font-bold text-sm flex items-center space-x-2">
+            <span>➕</span> <span>Add Account</span>
+        </button>
+    </div>
+
+    <!-- Add Party Modal -->
+    <div id="partyModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
+        <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
+            <h3 class="text-md font-bold mb-3 text-gray-800">Add New Customer</h3>
+            <input type="text" id="partyNameInput" placeholder="Customer Name *" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
+            <input type="tel" id="partyPhoneInput" placeholder="Phone Number (For WhatsApp)" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeAddPartyModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
+                <button onclick="saveParty()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Account Modal -->
+    <div id="accountModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-30">
+        <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
+            <h3 class="text-md font-bold mb-3 text-gray-800">Add Bank/Cash Account</h3>
+            <input type="text" id="accNameInput" placeholder="Account Name (e.g. SBI, Paytm, Cash)" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
+            <input type="number" id="accOpeningBalance" placeholder="Initial Balance (₹)" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeAddAccountModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
+                <button onclick="saveAccount()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Party Detail Screen -->
+    <div id="partyDetailScreen" class="fixed inset-0 bg-gray-100 hidden flex flex-col z-30">
+        <div class="bg-indigo-700 text-white p-4 flex items-center justify-between shadow">
+            <div class="flex items-center space-x-3">
+                <button onclick="closePartyDetail()" class="text-lg font-bold">⬅</button>
+                <div>
+                    <h2 id="detailPartyName" class="font-bold text-base">Customer Name</h2>
+                    <p id="detailPartyPhone" class="text-xs text-indigo-200">Phone</p>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button onclick="sendWhatsAppReminder()" class="bg-green-600 p-2 rounded-lg text-xs font-bold">💬 WhatsApp</button>
+                <button onclick="downloadPDF()" class="bg-indigo-800 p-2 rounded-lg text-xs font-bold">📥 PDF</button>
+            </div>
+        </div>
+        <div id="detailBalanceBanner" class="p-3 bg-green-100 text-green-800 font-bold text-center text-sm flex justify-between px-6">
+            <span>Net Balance:</span>
+            <span id="detailBalanceAmount">₹0</span>
+        </div>
+        <div id="pdfContent" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50"></div>
+        <div class="p-3 grid grid-cols-2 gap-3 bg-white border-t">
+            <button onclick="openAddTxModal(false)" class="bg-red-600 text-white py-3 rounded-xl font-bold text-sm shadow">You Gave (-)</button>
+            <button onclick="openAddTxModal(true)" class="bg-green-600 text-white py-3 rounded-xl font-bold text-sm shadow">You Got (+)</button>
+        </div>
+    </div>
+
+    <!-- Account Detail Screen -->
+    <div id="accountDetailScreen" class="fixed inset-0 bg-gray-100 hidden flex flex-col z-30">
+        <div class="bg-blue-700 text-white p-4 flex items-center justify-between shadow">
+            <div class="flex items-center space-x-3">
+                <button onclick="closeAccountDetail()" class="text-lg font-bold">⬅</button>
+                <div>
+                    <h2 id="detailAccName" class="font-bold text-base">Account Name</h2>
+                    <p class="text-xs text-blue-200">Bank / Cash Account</p>
+                </div>
+            </div>
+        </div>
+        <div id="accBalanceBanner" class="p-3 bg-blue-50 text-blue-800 font-bold text-center text-sm flex justify-between px-6 border-b">
+            <span>Available Balance:</span>
+            <span id="detailAccBalanceAmount">₹0</span>
+        </div>
+        <div id="accTxContent" class="flex-1 overflow-y-auto p-4 space-y-2 bg-gray-50"></div>
+        <div class="p-3 grid grid-cols-2 gap-3 bg-white border-t">
+            <button onclick="openAddAccTxModal(false)" class="bg-red-600 text-white py-3 rounded-xl font-bold text-sm shadow">Expense (- Kharch)</button>
+            <button onclick="openAddAccTxModal(true)" class="bg-green-600 text-white py-3 rounded-xl font-bold text-sm shadow">Income (+ Aaye)</button>
+        </div>
+    </div>
+
+    <!-- Add Transaction Modal (Party) -->
+    <div id="addTxModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+        <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
+            <h3 id="txModalTitle" class="text-md font-bold mb-3">Add Entry</h3>
+            <input type="number" id="txAmountInput" placeholder="Amount (₹) *" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
+            <input type="text" id="txDescInput" placeholder="Enter details (Bill no, Item, etc.)" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeAddTxModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
+                <button onclick="saveTransaction()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Account Transaction Modal -->
+    <div id="addAccTxModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center p-4 z-40">
+        <div class="bg-white p-5 rounded-2xl w-full max-w-sm shadow-xl">
+            <h3 id="accTxModalTitle" class="text-md font-bold mb-3">Add Entry</h3>
+            <input type="number" id="accTxAmountInput" placeholder="Amount (₹) *" class="w-full border p-2.5 rounded-lg mb-3 text-sm">
+            <input type="text" id="accTxDescInput" placeholder="Reason (e.g. Petrol, Salary, Grocery)" class="w-full border p-2.5 rounded-lg mb-4 text-sm">
+            <div class="flex justify-end space-x-2">
+                <button onclick="closeAddAccTxModal()" class="px-4 py-2 bg-gray-200 rounded-lg text-sm">Cancel</button>
+                <button onclick="saveAccTransaction()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let parties = JSON.parse(localStorage.getItem('hisabkit_data')) || [];
+        let accounts = JSON.parse(localStorage.getItem('hisabkit_accounts')) || [];
+        
+        let activePartyIndex = null;
+        let activeAccountIndex = null;
+        let isCreditMode = true;
+        let isAccIncomeMode = true;
+        let currentTab = 'parties';
+
+        function saveData() {
+            localStorage.setItem('hisabkit_data', JSON.stringify(parties));
+            localStorage.setItem('hisabkit_accounts', JSON.stringify(accounts));
+            render();
+        }
+
+        function switchTab(tab) {
+            currentTab = tab;
+            if (tab === 'parties') {
+                document.getElementById('partiesSection').classList.remove('hidden');
+                document.getElementById('accountsSection').classList.add('hidden');
+                document.getElementById('partyFab').classList.remove('hidden');
+                document.getElementById('accountFab').classList.add('hidden');
+                document.getElementById('partyTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-indigo-600 text-white shadow";
+                document.getElementById('accountTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-white text-gray-700 shadow border";
+            } else {
+                document.getElementById('partiesSection').classList.add('hidden');
+                document.getElementById('accountsSection').classList.remove('hidden');
+                document.getElementById('partyFab').classList.add('hidden');
+                document.getElementById('accountFab').classList.remove('hidden');
+                document.getElementById('accountTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-blue-600 text-white shadow";
+                document.getElementById('partyTabBtn').className = "flex-1 py-2 rounded-lg font-bold text-xs bg-white text-gray-700 shadow border";
+            }
+            render();
+        }
+
+        function render() {
+            let totalGet = 0;
+            let totalGive = 0;
+            let searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            let partyHTML = '';
+            let pCount = 0;
+
+            parties.forEach((party, index) => {
+                if (!party.name.toLowerCase().includes(searchQuery)) return;
+                pCount++;
+                let balance = 0;
+                party.txs.forEach(t => balance += t.isCredit ? t.amount : -t.amount);
+                if (balance > 0) totalGet += balance;
+                else if (balance < 0) totalGive += Math.abs(balance);
+
+                partyHTML += `
+                    <div onclick="openParty(${index})" class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-50">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-indigo-100 text-indigo-700 font-bold rounded-full flex items-center justify-center text-sm">
+                                ${party.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-sm">${party.name}</h3>
+                                <p class="text-xs text-gray-400">${party.phone || 'No phone number'}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-extrabold text-sm ${balance >= 0 ? 'text-green-600' : 'text-red-600'}">₹${Math.abs(balance)}</p>
+                            <p class="text-[10px] text-gray-500 font-medium">${balance >= 0 ? "You'll Get" : "You'll Give"}</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            let totalBankBalance = 0;
+            let accountHTML = '';
+
+            accounts.forEach((acc, index) => {
+                let bal = acc.openingBalance;
+                acc.txs.forEach(t => bal += t.isIncome ? t.amount : -t.amount);
+                totalBankBalance += bal;
+
+                accountHTML += `
+                    <div onclick="openAccount(${index})" class="bg-white p-3.5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center cursor-pointer hover:bg-gray-50">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-10 h-10 bg-blue-100 text-blue-700 font-bold rounded-full flex items-center justify-center text-sm">
+                                🏦
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-gray-800 text-sm">${acc.name}</h3>
+                                <p class="text-xs text-gray-400">${acc.txs.length} Transactions</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-extrabold text-sm ${bal >= 0 ? 'text-blue-600' : 'text-red-600'}">₹${bal}</p>
+                            <p class="text-[10px] text-gray-500 font-medium">Available</p>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('totalGet').innerText = `₹${totalGet}`;
+            document.getElementById('totalGive').innerText = `₹${totalGive}`;
+            document.getElementById('totalBankBalance').innerText = `₹${totalBankBalance}`;
+            document.getElementById('partyCount').innerText = `${pCount} Parties`;
+            document.getElementById('partyList').innerHTML = partyHTML || '<p class="text-center text-gray-400 py-6 text-sm">No customers found.</p>';
+            document.getElementById('accountList').innerHTML = accountHTML || '<p class="text-center text-gray-400 py-6 text-sm">No accounts added yet. Click "+ Add Account".</p>';
+        }
+
+        // Party Modals & Actions
+        function openAddPartyModal() { document.getElementById('partyModal').classList.remove('hidden'); }
+        function closeAddPartyModal() { document.getElementById('partyModal').classList.add('hidden'); }
+        function saveParty() {
+            let name = document.getElementById('partyNameInput').value.trim();
+            let phone = document.getElementById('partyPhoneInput').value.trim();
+            if (!name) return alert('Please enter customer name');
+            parties.push({ name, phone, txs: [] });
+            document.getElementById('partyNameInput').value = '';
+            document.getElementById('partyPhoneInput').value = '';
+            closeAddPartyModal();
+            saveData();
+        }
+
+        function openParty(index) {
+            activePartyIndex = index;
+            let party = parties[index];
+            document.getElementById('detailPartyName').innerText = party.name;
+            document.getElementById('detailPartyPhone').innerText = party.phone || 'No phone';
+            updatePartyScreen();
+            document.getElementById('partyDetailScreen').classList.remove('hidden');
+        }
+
+        function closePartyDetail() {
+            document.getElementById('partyDetailScreen').classList.add('hidden');
+            render();
+        }
+
+        function updatePartyScreen() {
+            let party = parties[activePartyIndex];
+            let txHTML = '';
+            let balance = 0;
+            party.txs.forEach((t, tIndex) => {
+                balance += t.isCredit ? t.amount : -t.amount;
+                txHTML += `
+                    <div class="bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center text-sm">
+                        <div>
+                            <p class="font-semibold text-gray-800">${t.desc}</p>
+                            <p class="text-[10px] text-gray-400">${t.date}</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="font-bold ${t.isCredit ? 'text-green-600' : 'text-red-600'}">
+                                ${t.isCredit ? '+' : '-'} ₹${t.amount}
+                            </span>
+                            <button onclick="deleteTx(${tIndex})" class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+            let banner = document.getElementById('detailBalanceBanner');
+            let amtSpan = document.getElementById('detailBalanceAmount');
+            if (balance >= 0) {
+                banner.className = "p-3 bg-green-50 text-green-800 font-bold text-center text-sm flex justify-between px-6 border-b border-green-200";
+                amtSpan.innerText = `₹${balance} (You'll Get)`;
+            } else {
+                banner.className = "p-3 bg-red-50 text-red-800 font-bold text-center text-sm flex justify-between px-6 border-b border-red-200";
+                amtSpan.innerText = `₹${Math.abs(balance)} (You'll Give)`;
+            }
+            document.getElementById('pdfContent').innerHTML = txHTML || '<p class="text-center text-gray-400 py-6 text-sm">No entries made yet.</p>';
+        }
+
+        function openAddTxModal(isCredit) {
+            isCreditMode = isCredit;
+            document.getElementById('txModalTitle').innerText = isCredit ? "You Got (+) - Jama" : "You Gave (-) - Udhar";
+            document.getElementById('addTxModal').classList.remove('hidden');
+        }
+        function closeAddTxModal() { document.getElementById('addTxModal').classList.add('hidden'); }
+        function saveTransaction() {
+            let amount = parseFloat(document.getElementById('txAmountInput').value);
+            let desc = document.getElementById('txDescInput').value.trim() || (isCreditMode ? 'Payment Received' : 'Given Item/Cash');
+            if (!amount || amount <= 0) return alert('Enter valid amount');
+            let date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            parties[activePartyIndex].txs.unshift({ amount, desc, isCredit: isCreditMode, date });
+            document.getElementById('txAmountInput').value = '';
+            document.getElementById('txDescInput').value = '';
+            closeAddTxModal();
+            saveData();
+            updatePartyScreen();
+        }
+        function deleteTx(tIndex) {
+            if (confirm('Delete this transaction?')) {
+                parties[activePartyIndex].txs.splice(tIndex, 1);
+                saveData();
+                updatePartyScreen();
+            }
+        }
+
+        // Account Modals & Actions
+        function openAddAccountModal() { document.getElementById('accountModal').classList.remove('hidden'); }
+        function closeAddAccountModal() { document.getElementById('accountModal').classList.add('hidden'); }
+        function saveAccount() {
+            let name = document.getElementById('accNameInput').value.trim();
+            let openingBalance = parseFloat(document.getElementById('accOpeningBalance').value) || 0;
+            if (!name) return alert('Please enter account name');
+            accounts.push({ name, openingBalance, txs: [] });
+            document.getElementById('accNameInput').value = '';
+            document.getElementById('accOpeningBalance').value = '';
+            closeAddAccountModal();
+            saveData();
+        }
+
+        function openAccount(index) {
+            activeAccountIndex = index;
+            let acc = accounts[index];
+            document.getElementById('detailAccName').innerText = acc.name;
+            updateAccountScreen();
+            document.getElementById('accountDetailScreen').classList.remove('hidden');
+        }
+
+        function closeAccountDetail() {
+            document.getElementById('accountDetailScreen').classList.add('hidden');
+            render();
+        }
+
+        function updateAccountScreen() {
+            let acc = accounts[activeAccountIndex];
+            let txHTML = '';
+            let bal = acc.openingBalance;
+
+            acc.txs.forEach((t, tIndex) => {
+                bal += t.isIncome ? t.amount : -t.amount;
+                txHTML += `
+                    <div class="bg-white p-3 rounded-lg shadow-sm border flex justify-between items-center text-sm">
+                        <div>
+                            <p class="font-semibold text-gray-800">${t.desc}</p>
+                            <p class="text-[10px] text-gray-400">${t.date}</p>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="font-bold ${t.isIncome ? 'text-green-600' : 'text-red-600'}">
+                                ${t.isIncome ? '+' : '-'} ₹${t.amount}
+                            </span>
+                            <button onclick="deleteAccTx(${tIndex})" class="text-gray-300 hover:text-red-500 text-xs">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            document.getElementById('detailAccBalanceAmount').innerText = `₹${bal}`;
+            document.getElementById('accTxContent').innerHTML = txHTML || '<p class="text-center text-gray-400 py-6 text-sm">No transactions in this account yet.</p>';
+        }
+
+        function openAddAccTxModal(isIncome) {
+            isAccIncomeMode = isIncome;
+            document.getElementById('accTxModalTitle').innerText = isIncome ? "Add Income (+ Aaye)" : "Add Expense (- Kharch)";
+            document.getElementById('addAccTxModal').classList.remove('hidden');
+        }
+        function closeAddAccTxModal() { document.getElementById('addAccTxModal').classList.add('hidden'); }
+        function saveAccTransaction() {
+            let amount = parseFloat(document.getElementById('accTxAmountInput').value);
+            let desc = document.getElementById('accTxDescInput').value.trim() || (isAccIncomeMode ? 'Money Added' : 'Expense');
+            if (!amount || amount <= 0) return alert('Enter valid amount');
+            let date = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+            accounts[activeAccountIndex].txs.unshift({ amount, desc, isIncome: isAccIncomeMode, date });
+            document.getElementById('accTxAmountInput').value = '';
+            document.getElementById('accTxDescInput').value = '';
+            closeAddAccTxModal();
+            saveData();
+            updateAccountScreen();
+        }
+        function deleteAccTx(tIndex) {
+            if (confirm('Delete this entry?')) {
+                accounts[activeAccountIndex].txs.splice(tIndex, 1);
+                saveData();
+                updateAccountScreen();
+            }
+        }
+
+        // WhatsApp, PDF, Backup & Restore
+        function sendWhatsAppReminder() {
+            let party = parties[activePartyIndex];
+            if (!party.phone) return alert('No phone number saved!');
+            let balance = 0;
+            party.txs.forEach(t => balance += t.isCredit ? t.amount : -t.amount);
+            if (balance <= 0) return alert('No due amount.');
+            let msg = `Hello ${party.name}, your account balance is ₹${balance}. Please clear your dues. Thank you!`;
+            window.open(`https://wa.me/91${party.phone}?text=${encodeURIComponent(msg)}`, '_blank');
+        }
+
+        function downloadPDF() {
+            let party = parties[activePartyIndex];
+            html2pdf().from(document.getElementById('pdfContent')).save(`${party.name}_statement.pdf`);
+        }
+
+        function exportData() {
+            let dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ parties, accounts }));
+            let dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", "hisabkit_backup.json");
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function triggerRestore() {
+            document.getElementById('restoreFile').click();
+        }
+
+        function importData(event) {
+            let file = event.target.files[0];
+            if (!file) return;
+
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    let parsedData = JSON.parse(e.target.result);
+                    if (parsedData.parties && parsedData.accounts) {
+                        if (confirm('Aapka purana data replace ho jayega. Kya aap backup file import karna chahte hain?')) {
+                            parties = parsedData.parties;
+                            accounts = parsedData.accounts;
+                            saveData();
+                            alert('Data successfully restore ho gaya hai!');
+                        }
+                    } else {
+                        alert('Invalid backup file format!');
+                    }
+                } catch (error) {
+                    alert('File read karne mein error aayi. Sahi JSON file select karein.');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetData() {
+            if (confirm('Are you sure you want to delete all data?')) {
+                parties = [];
+                accounts = [];
+                saveData();
+            }
+        }
+
+        render();
+    </script>
+</body>
+</html>
